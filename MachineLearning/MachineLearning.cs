@@ -201,11 +201,19 @@ namespace MachineLearning
 		private void btnTestAccuracy_Click(object sender, EventArgs e)
 		{
 			txtConsole.AppendText("\nMeasuring learner's accuracy against a reserved test set taken from the input data...");
-			double Accuracy = Learner.MeasureAccuracy("Test") * 100;
+			double Accuracy;
+			if (LearnerType == "Decision Tree")
+			{
+				var dLearner = (DecisionTree)Learner;
+				Accuracy = dLearner.runNFold(10);
+			}
+			else {
+				Accuracy = Learner.MeasureAccuracy("Test") * 100;
+			}
 			txtConsole.AppendText("\nLearner's measured accuracy: " + Accuracy);
 			txtConsole.AppendText("\nTotal training epochs completed: " + Learner.TotalEpochs);
-            txtConsole.AppendText(Learner.LearnerOutputs);
-            txtConsole.ScrollToCaret();
+			txtConsole.AppendText(Learner.LearnerOutputs);
+			txtConsole.ScrollToCaret();
 		}
 	}
 }

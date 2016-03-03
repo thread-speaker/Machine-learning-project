@@ -135,29 +135,29 @@ namespace MachineLearning
 			}
 		}
 
-        public DataSet(DataSet Data)
-        {
-            IsValid = (Data.IsValid == true);
+		public DataSet(DataSet Data)
+		{
+			IsValid = (Data.IsValid == true);
 
-            Records = new List<List<double>>(Data.Records);
-            TargetOutputs = new List<double>(Data.TargetOutputs);
+			Records = new List<List<double>>(Data.Records);
+			TargetOutputs = new List<double>(Data.TargetOutputs);
 
-            TestRecords = new List<List<double>>(Data.TestRecords);
-            TestTargets = new List<double>(Data.TestTargets);
+			TestRecords = new List<List<double>>(Data.TestRecords);
+			TestTargets = new List<double>(Data.TestTargets);
 
-            ValidationRecords = new List<List<double>>(Data.ValidationRecords);
-            ValidationTargets = new List<double>(Data.ValidationTargets);
+			ValidationRecords = new List<List<double>>(Data.ValidationRecords);
+			ValidationTargets = new List<double>(Data.ValidationTargets);
 
-            NominalValueMap = new Dictionary<string, double>(Data.NominalValueMap);
-            NominalOutputMap = new Dictionary<string, double>(Data.NominalOutputMap);
-        }
-        #endregion
+			NominalValueMap = new Dictionary<string, double>(Data.NominalValueMap);
+			NominalOutputMap = new Dictionary<string, double>(Data.NominalOutputMap);
+		}
+		#endregion
 
-        #region Manipulate Training/Test/Validation sets
-        /// <summary>
-        /// Shuffles both feature records and targetOutputs on a randomly generated seed
-        /// </summary>
-        public void Shuffle()
+		#region Manipulate Training/Test/Validation sets
+		/// <summary>
+		/// Shuffles both feature records and targetOutputs on a randomly generated seed
+		/// </summary>
+		public void Shuffle()
 		{
 			Random rand = new Random();
 			this.Shuffle(rand);
