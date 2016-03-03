@@ -9,6 +9,7 @@ namespace MachineLearning
 	{
 		private DataSet Data;
 		private Node rootNode;
+        private bool prune = false;
 
 		public DecisionTree(DataSet Data)
 		{
@@ -19,12 +20,16 @@ namespace MachineLearning
 		{
 			Data.Shuffle(Rand);
 			Data.SplitTestSet(TestSetPercentage);
+            if (prune)
+            {
+                Data.SplitValidationSet(ValidationSetPercentage);
+            }
 		}
 
 		public override void Train()
 		{
 			rootNode = new Node(Data);
-
+            
 			Queue<Node> queue = new Queue<Node>();
 			queue.Enqueue(rootNode);
 			while (queue.Count > 0)
@@ -32,51 +37,108 @@ namespace MachineLearning
 				Node currentNode = queue.Dequeue();
 				if (currentNode.canSplit())
 				{
-					List<double> infos = currentNode.getFeatureSplitInfos();
-					double min = infos.Min();
-					List<Node> children = currentNode.splitOn(infos.IndexOf(min));
-					foreach (Node child in children)
+                    int bestSplit = currentNode.getBestSplit();
+                    if (bestSplit < 0) continue;
+                    Dictionary<double, Node> children = currentNode.splitOn(bestSplit);
+					foreach (KeyValuePair<double, Node> child in children)
 					{
-						queue.Enqueue(child);
+						queue.Enqueue(child.Value);
 					}
 				}
 			}
 
-			//if the code worked correctly, then I should have a full tree at this point and a variable pointing to the root node
-			//Should I want to prune, this is the place
-		}
+            //if the code worked correctly, then I should have a full tree at this point and a variable pointing to the root node
+            //Should I want to prune, this is the place
+
+            this.LearnerOutputs = "\n";
+        }
 
 		public override double Predict(List<double> RecordFeatures)
 		{
-			throw new NotImplementedException();
+            Node currentNode = rootNode;
+            while (currentNode.myFeatureSplit >= 0)
+            {
+                double featureValue = RecordFeatures[currentNode.myFeatureSplit];
+                if (currentNode.children.ContainsKey(featureValue)) {
+                    currentNode = currentNode.children[featureValue];
+                }
+                else
+                {
+                    return currentNode.prediction();
+                }
+            }
+            return currentNode.prediction();
 		}
 
 		public override double MeasureAccuracy(string mode)
 		{
-			throw new NotImplementedException();
-		}
+            int numCorrect = 0, numWrong = 0;
 
-		#region NodeClass
+            if (mode.ToLower() == "test")
+            {
+                for (int i = 0; i < Data.TestRecords.Count; i++)
+                {
+                    double result = this.Predict(Data.TestRecords[i]);
+                    if (result == Data.TestTargets[i])
+                    {
+                        numCorrect++;
+                    }
+                    else numWrong++;
+                }
+            }
+            else if (mode.ToLower() == "validation")
+            {
+                for (int i = 0; i < Data.TestRecords.Count; i++)
+                {
+                    double result = this.Predict(Data.TestRecords[i]);
+                    if (result == Data.TestTargets[i])
+                    {
+                        numCorrect++;
+                    }
+                    else numWrong++;
+                }
+            }
+            else if (mode.ToLower() == "training")
+            {
+                for (int i = 0; i < Data.TestRecords.Count; i++)
+                {
+                    double result = this.Predict(Data.TestRecords[i]);
+                    if (result == Data.TestTargets[i])
+                    {
+                        numCorrect++;
+                    }
+                    else numWrong++;
+                }
+            }
+
+            LearnerOutputs = "\n# correct = " + numCorrect + ", # wrong = " + numWrong;
+            if (numCorrect + numWrong == 0) return 0.0;
+            else return ((double)numCorrect / (double)(numCorrect + numWrong));
+		}
+        
 		private class Node
 		{
 			public DataSet Data;
-			public List<int> excludeFeatures;
-			public List<Node> children;
+			public Dictionary<double, Node> children;
+            public List<int> excludeFeatures;
+            public int myFeatureSplit;
 
-			public Node(DataSet Data)
+            public Node(DataSet Data)
 			{
 				this.Data = new DataSet(Data);
+				children = new Dictionary<double, Node>();
+                myFeatureSplit = -1;
 				excludeFeatures = new List<int>();
-				children = new List<Node>();
 			}
 
 			public Node(DataSet Data, int featureIndex, double featureValue, List<int> excludeFeatures)
 			{
 				this.Data = new DataSet(Data);
+				children = new Dictionary<double, Node>();
 				excludeFeatures = new List<int>(excludeFeatures);
-				children = new List<Node>();
+                myFeatureSplit = -1;
 
-				for (int row = Data.Records.Count - 1; row >= 0; row--)
+                for (int row = Data.Records.Count - 1; row >= 0; row--)
 				{
 					if (Data.Records[row][featureIndex] != featureValue)
 					{
@@ -88,7 +150,28 @@ namespace MachineLearning
 
 			public double getEntropy()
 			{
-				return 0;
+                double result = 0.0;
+
+                //Get the count of how many times each classification occurrs in this node
+                Dictionary<double, int> classificationCount = new Dictionary<double, int>();
+                foreach (double classification in Data.TargetOutputs)
+                {
+                    if (!classificationCount.ContainsKey(classification))
+                    {
+                        classificationCount.Add(classification, 0);
+                    }
+                    classificationCount[classification]++;
+                }
+
+                //Add each division's entropy
+                foreach (KeyValuePair<double, int> division in classificationCount)
+                {
+                    double probability = ((double)division.Value / (double)this.getSize());
+                    result += (probability * Math.Log(probability, 2));
+                }
+
+                result *= -1;
+                return result;
 			}
 
 			public int getSize()
@@ -96,95 +179,120 @@ namespace MachineLearning
 				return Data.Records.Count;
 			}
 
+            /// <summary>
+            /// Get the index of the best feature to split this node upon.
+            /// </summary>
+            /// <returns>-1 if no valid split exists</returns>
 			public int getBestSplit()
 			{
-				return 0;
+                if (!this.canSplit())
+                {
+                    return -1;
+                }
+
+                //Try all features, ignoring the already used features
+                Dictionary<int, double> entropies = new Dictionary<int, double>();
+                for (int index = 0; Data.Records.Count > 0 && index < Data.Records[0].Count; index++)
+                {
+                    if (this.excludeFeatures.Contains(index))
+                    {
+                        continue;
+                    }
+
+                    //Record the entropy of the split across all potential children.
+                    double splitEntropy = 0.0;
+                    Dictionary<double, Node> potentialChildren = this.splitOn(index);
+                    foreach(KeyValuePair<double, Node> potentialChild in potentialChildren)
+                    {
+                        Node child = potentialChild.Value;
+                        if (child != null)
+                        {
+                            splitEntropy += ((double)child.getSize() / (double)this.getSize()) * child.getEntropy();
+                        }
+                    }
+                    entropies.Add(index, splitEntropy);
+                }
+
+                //Remove the children, as they might not be correct from potential children calculations
+                this.children = new Dictionary<double, Node>();
+
+                //Find the lowest entropy value, and return it's corresponding index
+                double lowest = double.MaxValue;
+                int lowestIndex = -1;
+                foreach(KeyValuePair<int, double> entropy in entropies)
+                {
+                    if (entropy.Value < lowest)
+                    {
+                        lowest = entropy.Value;
+                        lowestIndex = entropy.Key;
+                    }
+                }
+				return lowestIndex;
 			}
 
 			public bool canSplit()
 			{
-				Data.TargetOutputs.Distinct();
-				return (
-					Data.Records.Count > 0
-					&& excludeFeatures.Count < Data.Records[0].Count
-					&& Data.TargetOutputs.Distinct().ToList().Count > 1
-				);
+                if (Data.Records.Count == 0) return false;
+
+                HashSet<double> classifications = new HashSet<double>(Data.TargetOutputs);
+                bool somethingToSplit = classifications.Count > 1;
+                bool featuresRemain = excludeFeatures.Count < Data.Records[0].Count;
+                bool hasNotAlreadySplit = myFeatureSplit < 0;
+
+                return somethingToSplit && featuresRemain && hasNotAlreadySplit;
 			}
 
-			public List<Node> splitOn(int featureIndex)
+			public Dictionary<double, Node> splitOn(int featureIndex)
 			{
-				List<double> seenValues = new List<double>();
+                myFeatureSplit = featureIndex;
+                children = new Dictionary<double, Node>();
+
+                HashSet<double> seenValues = new HashSet<double>();
 				foreach (List<double> row in Data.Records)
 				{
-					if (seenValues.Contains(row[featureIndex]))
-					{
-						continue;
-					}
-					else
+					if (!seenValues.Contains(row[featureIndex]))
 					{
 						seenValues.Add(row[featureIndex]);
-						children.Add(new Node(Data, featureIndex, row[featureIndex], excludeFeatures));
-					}
+                    }
 				}
+
+                foreach (double seen in seenValues)
+                {
+                    Node child = new Node(Data, featureIndex, seen, new List<int>(excludeFeatures));
+
+                    //Only add children that are not empty
+                    if (child.getSize() > 0)
+                    {
+                        children.Add(seen, child);
+                    }
+                }
 
 				return children;
 			}
 
-			public List<double> getFeatureSplitInfos()
-			{
-				List<double> infos = new List<double>();
+            public double prediction()
+            {
+                Dictionary<double, int> classificationCount = new Dictionary<double, int>();
+                foreach (double classification in Data.TargetOutputs)
+                {
+                    if (!classificationCount.ContainsKey(classification))
+                        classificationCount.Add(classification, 0);
+                    classificationCount[classification]++;
+                }
 
-				for (int column = 0; column < Data.Records[0].Count; column++)
-				{
-					if (excludeFeatures.Contains(column))
-					{
-						infos.Add(Double.MaxValue);
-						continue;
-					}
+                double prediction = 0.0;
+                int min = int.MaxValue;
+                foreach (KeyValuePair<double, int> count in classificationCount)
+                {
+                    if (count.Value < min)
+                    {
+                        min = count.Value;
+                        prediction = count.Key;
+                    }
+                }
 
-					Dictionary<double, int> inputCount = new Dictionary<double, int>();
-					Dictionary<double, List<int>> outputCount = new Dictionary<double, List<int>>();
-					for (int row = 0; row < Data.Records.Count; row++)
-					{
-						if (!inputCount.ContainsKey(Data.Records[row][column]))
-						{
-							inputCount.Add(Data.Records[row][column], 0);
-							outputCount.Add(Data.Records[row][column], new List<int>());
-							for (int k = 0; k < Data.NumClassifications; k++)
-							{
-								outputCount[Data.Records[row][column]].Add(0);
-							}
-						}
-						inputCount[Data.Records[row][column]]++;
-						outputCount[Data.Records[row][column]][(int)Data.TargetOutputs[row]]++;
-					}
-
-					double featureInfo = 0.0;
-					foreach (KeyValuePair<double, int> entry in inputCount)
-					{
-						if (entry.Value > 0)
-						{
-							double sRatio = ((double)entry.Value / (double)Data.Records.Count);
-							double info = 0.0;
-							for (int output = 1; output <= Data.NumClassifications; output++)
-							{
-								int count = outputCount[entry.Key][output];
-								if (count > 0)
-								{
-									double probability = ((double)count / (double)entry.Value);
-									info += (probability * Math.Log(probability, 2));
-								}
-							}
-							featureInfo += -sRatio * info;
-						}
-					}
-
-					infos.Add(featureInfo);
-				}
-
-				return infos;
-			}
+                return prediction;
+            }
 		}
-		#endregion
 	}
 }

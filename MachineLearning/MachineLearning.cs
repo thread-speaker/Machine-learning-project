@@ -204,7 +204,8 @@ namespace MachineLearning
 			double Accuracy = Learner.MeasureAccuracy("Test") * 100;
 			txtConsole.AppendText("\nLearner's measured accuracy: " + Accuracy);
 			txtConsole.AppendText("\nTotal training epochs completed: " + Learner.TotalEpochs);
-			txtConsole.ScrollToCaret();
+            txtConsole.AppendText(Learner.LearnerOutputs);
+            txtConsole.ScrollToCaret();
 		}
 	}
 }
