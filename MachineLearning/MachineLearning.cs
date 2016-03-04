@@ -205,8 +205,9 @@ namespace MachineLearning
 			if (LearnerType == "Decision Tree")
 			{
 				var dLearner = (DecisionTree)Learner;
-				Accuracy = dLearner.runNFold(10);
-			}
+                //Accuracy = dLearner.runNFold(10);
+                Accuracy = Learner.MeasureAccuracy("Test") * 100;
+            }
 			else {
 				Accuracy = Learner.MeasureAccuracy("Test") * 100;
 			}
