@@ -49,6 +49,7 @@
   <ItemGroup>
     <Compile Include="DataSet.cs" />
     <Compile Include="DecisionTree.cs" />
+    <Compile Include="KNN.cs" />
     <Compile Include="LearningMachine.cs" />
     <Compile Include="MachineLearning.cs">
       <SubType>Form</SubType>
@@ -71,6 +72,14 @@
       <DependentUpon>Resources.resx</DependentUpon>
       <DesignTime>True</DesignTime>
     </Compile>
+    <None Include="datasets\cars.arff" />
+    <None Include="datasets\housing-test.arff" />
+    <None Include="datasets\housing-train.arff" />
+    <None Include="datasets\iris.arff" />
+    <None Include="datasets\lenses.arff" />
+    <None Include="datasets\mt_test.arff" />
+    <None Include="datasets\mt_train.arff" />
+    <None Include="datasets\vote.arff" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>

@@ -28,6 +28,9 @@ namespace MachineLearning
 		public List<List<double>> TestRecords { get; set; }
 		public List<double> TestTargets { get; set; }
 
+        public List<int> NominalFeatures { get; }
+        public bool OutputNominal { get; }
+
 		//Number of possible output classifications (Given nominal target outputs)
 		public int? NumClassifications
 		{
@@ -54,7 +57,7 @@ namespace MachineLearning
 		/// <param name="FileLocation"></param>
 		public DataSet(string FileLocation)
 		{
-			IsValid = true;
+            IsValid = true;
 
 			Records = new List<List<double>>();
 			TargetOutputs = new List<double>();
@@ -65,7 +68,10 @@ namespace MachineLearning
 			ValidationRecords = new List<List<double>>();
 			ValidationTargets = new List<double>();
 
-			try {
+            NominalFeatures = new List<int>();
+            OutputNominal = false;
+
+            try {
 				List<string> data = System.IO.File.ReadAllLines(FileLocation).ToList();
 				//Remove everything before the first attribute
 				for (int i = 0; i < data.Count; i++)
@@ -76,6 +82,7 @@ namespace MachineLearning
 						break;
 					}
 				}
+                
 				//Process attributes, then remove them when @data is found
 				for (int i = 0; i < data.Count; i++)
 				{
@@ -90,8 +97,9 @@ namespace MachineLearning
 
 					if (line.ToLower().Contains("class"))
 					{
-						//Get to the first nominal value
-						string attribute = line.Substring(line.IndexOf('{') + 1);
+                        OutputNominal = true;
+                        //Get to the first nominal value
+                        string attribute = line.Substring(line.IndexOf('{') + 1);
 						//Remove any spaces and the trailing bracket
 						attribute = attribute.Replace(" ", "");
 						attribute = attribute.Replace("}", "");
@@ -104,8 +112,9 @@ namespace MachineLearning
 					}
 					else
 					{
-						//Get to the first nominal value
-						string attribute = line.Substring(line.IndexOf('{') + 1);
+                        NominalFeatures.Add(i);
+                        //Get to the first nominal value
+                        string attribute = line.Substring(line.IndexOf('{') + 1);
 						//Remove any spaces and the trailing bracket
 						attribute = attribute.Replace(" ", "");
 						attribute = attribute.Replace("}", "");
@@ -150,7 +159,10 @@ namespace MachineLearning
 
 			NominalValueMap = new Dictionary<string, double>(Data.NominalValueMap);
 			NominalOutputMap = new Dictionary<string, double>(Data.NominalOutputMap);
-		}
+
+            NominalFeatures = new List<int>(Data.NominalFeatures);
+            OutputNominal = Data.OutputNominal;
+        }
 		#endregion
 
 		#region Manipulate Training/Test/Validation sets
