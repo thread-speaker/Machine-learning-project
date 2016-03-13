@@ -130,14 +130,14 @@ namespace MachineLearning
 
 				foreach (string line in data)
 				{
-					if (line[0] == ('%'))
+					if (line.Trim(' ', '\t') == "" || line[0] == ('%'))
 						continue;
 					List<string> record = line.Split(',').ToList();
 					Records.Add(parseFeatures(record));
 					TargetOutputs.Add(parseTargetOutput(record));
 				}
 			}
-			catch
+			catch (Exception e)
 			{
 				this.IsValid = false;
 				return;

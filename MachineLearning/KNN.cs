@@ -10,6 +10,8 @@ namespace MachineLearning
         private int k;
         private List<Point> Points;
         private bool Normalize = true;
+        private bool DistanceWeighted = true;
+        private int Reduction = 10;
         private Dictionary<int, double> Normalizations;
 
         public KNN(DataSet Data, int k)
@@ -18,6 +20,8 @@ namespace MachineLearning
             this.k = k;
             Points = new List<Point>();
             Normalizations = new Dictionary<int, double>();
+            if (Reduction < 1)
+                Reduction = 1;
         }
 
         public override void Initialize()
@@ -125,13 +129,39 @@ namespace MachineLearning
 
             if (Data.OutputNominal)
             {
-                //Not sure if this is the correct way to calculate mode
-                //I got the LINQ from http://stackoverflow.com/questions/19467492/how-do-i-find-the-mode-of-a-listdouble
-                List<double> outputs = new List<double>();
-                foreach (KeyValuePair<double, Point> kv in nearest)
-                    outputs.Add(kv.Value.Target);
-                double modeValue = outputs.GroupBy(x => x).OrderByDescending(x => x.Count()).ThenBy(x => x.Key).Select(x => x.Key).FirstOrDefault();
-                return modeValue;
+                if (DistanceWeighted)
+                {
+                    Dictionary<double, double> outputs = new Dictionary<double, double>();
+                    foreach (KeyValuePair<double, Point> kv in nearest)
+                    {
+                        if (!outputs.ContainsKey(kv.Value.Target))
+                        {
+                            outputs.Add(kv.Value.Target, 0);
+                        }
+                        outputs[kv.Value.Target] += 1/(kv.Key); //key is distance squared
+                    }
+
+                    double largest = 0;
+                    double result = 0;
+                    foreach (KeyValuePair<double, double> kv in outputs)
+                    {
+                        if (kv.Value > largest)
+                        {
+                            largest = kv.Value;
+                            result = kv.Key;
+                        }
+                    }
+                    return result;
+                }
+                else
+                {
+                    //I got the LINQ for getting the mode from http://stackoverflow.com/questions/19467492/how-do-i-find-the-mode-of-a-listdouble
+                    List<double> outputs = new List<double>();
+                    foreach (KeyValuePair<double, Point> kv in nearest)
+                        outputs.Add(kv.Value.Target);
+                    double modeValue = outputs.GroupBy(x => x).OrderByDescending(x => x.Count()).ThenBy(x => x.Key).Select(x => x.Key).FirstOrDefault();
+                    return modeValue;
+                }
             }
             else
             {
@@ -147,7 +177,10 @@ namespace MachineLearning
         {
             for (int i = 0; i < Data.Records.Count; i++)
             {
-                Points.Add(new Point(Data.Records[i], Data.TargetOutputs[i], Data.NominalFeatures));
+                if (i % Reduction == 0)
+                {
+                    Points.Add(new Point(Data.Records[i], Data.TargetOutputs[i], Data.NominalFeatures));
+                }
             }
 
             if (Normalize)
@@ -207,7 +240,12 @@ namespace MachineLearning
                 double result = 0.0;
                 for (int i = 0; i < Record.Count; i++)
                 {
-                    if (!NominalFeatures.Contains(i))
+                    if (RecordFeatures[i] == Double.MaxValue || Record[i] == Double.MaxValue)
+                    {
+                        //Handle unknowns (either the for the point, or the record features)
+                        result += 1;
+                    }
+                    else if (!NominalFeatures.Contains(i))
                     {
                         //continuous feature
                         result += Math.Pow(RecordFeatures[i] - this.Record[i], 2);
