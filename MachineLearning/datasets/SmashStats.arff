@@ -53,16 +53,16 @@
 %
 @RELATION YSmash
 
-@ATTRIBUTE	sds			Continuous
-@ATTRIBUTE	kd			Continuous
-@ATTRIBUTE	dgdr		Continuous
-@ATTRIBUTE	dgkill		Continuous
-@ATTRIBUTE	drdeath		Continuous
-@ATTRIBUTE	lfpn		Continuous
-@ATTRIBUTE	kllspn		Continuous
-@ATTRIBUTE	dps			Continuous
-@ATTRIBUTE	drps		Continuous
-@ATTRIBUTE	class		Continuous
+@ATTRIBUTE sds             Continuous
+@ATTRIBUTE kd              Continuous
+@ATTRIBUTE dgdr            Continuous
+@ATTRIBUTE dgkill          Continuous
+@ATTRIBUTE drdeath         Continuous
+@ATTRIBUTE lfpn            Continuous
+@ATTRIBUTE kllspn          Continuous
+@ATTRIBUTE dps             Continuous
+@ATTRIBUTE drps            Continuous
+@ATTRIBUTE class           Continuous
 
 @DATA
 1,1.976,1.525,103.568,134.146,121.46,61.48,1.68,1.1,83.33333333

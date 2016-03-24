@@ -10,8 +10,8 @@ namespace MachineLearning
         private int k;
         private List<Point> Points;
         private bool Normalize = true;
-        private bool DistanceWeighted = true;
-        private int Reduction = 10;
+        private bool DistanceWeighted = false;
+        private int Reduction = 1;
         private Dictionary<int, double> Normalizations;
 
         public KNN(DataSet Data, int k)
