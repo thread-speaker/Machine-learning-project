@@ -24,7 +24,7 @@ namespace MachineLearning
 	{
 		private string LearnerType = "Baseline";
 		private string DataFileName = "";
-        private string TestFileName = "";
+		private string TestFileName = "";
 		private DataSet Data;
 		private LearningMachine Learner;
 		public MachineLearning()
@@ -41,7 +41,7 @@ namespace MachineLearning
 			txtRandomSeed.Text = "0";
 			txtNumHidden.Text = "0";
 			txtMomentum.Text = ".9";
-            //txtKCount = "5";
+			//txtKCount = "5";
 			ddlLearningMethod.SelectedIndex = 0; //Defaults to Perceptron
 			LearnerType = ddlLearningMethod.Text;
 		}
@@ -83,48 +83,48 @@ namespace MachineLearning
 					txtConsole.ScrollToCaret();
 					break;
 			}
-        }
+		}
 
-        private void BrowseTestBtn_Click(object sender, EventArgs e)
-        {
-            var fileDialog = new System.Windows.Forms.OpenFileDialog();
-            var result = fileDialog.ShowDialog();
-            switch (result)
-            {
-                case System.Windows.Forms.DialogResult.OK:
-                    var file = fileDialog.FileName;
-                    txtTestName.Text = file;
-                    TestFileName = file;
+		private void BrowseTestBtn_Click(object sender, EventArgs e)
+		{
+			var fileDialog = new System.Windows.Forms.OpenFileDialog();
+			var result = fileDialog.ShowDialog();
+			switch (result)
+			{
+				case System.Windows.Forms.DialogResult.OK:
+					var file = fileDialog.FileName;
+					txtTestName.Text = file;
+					TestFileName = file;
 
-                    //Make sure the arff file is valid. Calling the DataSet constructor will make the whole thing to validate it.
-                    //This wasteful, because we remake the DataSet on each Train(). (To undo any shuffling from previous trains)
-                    //If you know your data file is valid and don't want to waste time validating it, comment out the next several lines
-                    Data = new DataSet(file);
-                    if (Data.IsValid)
-                    {
-                        txtConsole.AppendText("\n\nTestset successfully validated.");
-                        txtConsole.ScrollToCaret();
-                    }
-                    else
-                    {
-                        txtConsole.AppendText("\n\nAn unknown error occured trying to load the test data set.");
-                        txtConsole.ScrollToCaret();
-                    }
-                    //End file validation
+					//Make sure the arff file is valid. Calling the DataSet constructor will make the whole thing to validate it.
+					//This wasteful, because we remake the DataSet on each Train(). (To undo any shuffling from previous trains)
+					//If you know your data file is valid and don't want to waste time validating it, comment out the next several lines
+					Data = new DataSet(file);
+					if (Data.IsValid)
+					{
+						txtConsole.AppendText("\n\nTestset successfully validated.");
+						txtConsole.ScrollToCaret();
+					}
+					else
+					{
+						txtConsole.AppendText("\n\nAn unknown error occured trying to load the test data set.");
+						txtConsole.ScrollToCaret();
+					}
+					//End file validation
 
-                    break;
-                case System.Windows.Forms.DialogResult.Cancel:
-                default:
-                    txtTestName.Text = null;
-                    TestFileName = null;
-                    Data = null;
-                    txtConsole.AppendText("\n\nAn unknown error occured trying to load the test data set.");
-                    txtConsole.ScrollToCaret();
-                    break;
-            }
-        }
+					break;
+				case System.Windows.Forms.DialogResult.Cancel:
+				default:
+					txtTestName.Text = null;
+					TestFileName = null;
+					Data = null;
+					txtConsole.AppendText("\n\nAn unknown error occured trying to load the test data set.");
+					txtConsole.ScrollToCaret();
+					break;
+			}
+		}
 
-        private void ddlLearningMethod_SelectedIndexChanged(object sender, EventArgs e)
+		private void ddlLearningMethod_SelectedIndexChanged(object sender, EventArgs e)
 		{
 			ComboBox ddlLearningMethod = sender as ComboBox;
 			LearnerType = ddlLearningMethod.Text;
@@ -136,27 +136,35 @@ namespace MachineLearning
 			txtMomentum.Visible = false;
 
 			if (LearnerType == "Neural Net")
-            { // Neural Net Specific Fields
-                lblNumHiddenNodes.Text = "Number Hidden Nodes (0 for numFeatures * 2)";
-                lblNumHiddenNodes.Visible = true;
+			{ // Neural Net Specific Fields
+				lblNumHiddenNodes.Text = "Number Hidden Nodes (0 for numFeatures * 2)";
+				lblNumHiddenNodes.Visible = true;
 				txtNumHidden.Visible = true;
 				lblMomentum.Visible = true;
 				txtMomentum.Visible = true;
-            }
-            else if (LearnerType == "Decision Tree")
-            {
-                txtConsole.AppendText("\n\nLearning method set to " + ddlLearningMethod.Text);
-                txtConsole.ScrollToCaret();
-            }
-            else if (LearnerType == "Instance Based")
-            {
-                lblNumHiddenNodes.Text = "Number for K (0 for numFeatures * 2)";
-                lblNumHiddenNodes.Visible = true;
-                txtNumHidden.Visible = true;
-                txtConsole.AppendText("\n\nLearning method set to " + ddlLearningMethod.Text);
-                txtConsole.ScrollToCaret();
-            }
-            else
+			}
+			else if (LearnerType == "Decision Tree")
+			{
+				txtConsole.AppendText("\n\nLearning method set to " + ddlLearningMethod.Text);
+				txtConsole.ScrollToCaret();
+			}
+			else if (LearnerType == "Instance Based")
+			{
+				lblNumHiddenNodes.Text = "Number for K (0 for numFeatures * 2)";
+				lblNumHiddenNodes.Visible = true;
+				txtNumHidden.Visible = true;
+				txtConsole.AppendText("\n\nLearning method set to " + ddlLearningMethod.Text);
+				txtConsole.ScrollToCaret();
+			}
+			else if (LearnerType == "Clustering")
+			{
+				lblNumHiddenNodes.Text = "Number of clusters (0 for 4)";
+				lblNumHiddenNodes.Visible = true;
+				txtNumHidden.Visible = true;
+				txtConsole.AppendText("\n\nLearning method set to " + ddlLearningMethod.Text);
+				txtConsole.ScrollToCaret();
+			}
+			else
 			{
 				txtConsole.AppendText("\n\nLearning method not yet implemented");
 				txtConsole.ScrollToCaret();
@@ -174,21 +182,21 @@ namespace MachineLearning
 			{
 				//Recreate the Data Set so it hasn't been altered by sorts during the previous train.
 				Data = new DataSet(DataFileName);
-                //If a test data set is specified, load it into the DataSet's test list;
-                if (TestFileName != null && TestFileName != "")
-                {
-                    txtConsole.AppendText("\n\nUsing supplied test data");
-                    DataSet testData = new DataSet(TestFileName);
-                    testData.SplitTestSet(1);
-                    Data.TestRecords = testData.TestRecords;
-                    Data.TestTargets = testData.TestTargets;
-                    Data.IsValid = (Data.IsValid && testData.IsValid);
-                }
-                if (!Data.IsValid)
+				//If a test data set is specified, load it into the DataSet's test list;
+				if (TestFileName != null && TestFileName != "")
+				{
+					txtConsole.AppendText("\n\nUsing supplied test data");
+					DataSet testData = new DataSet(TestFileName);
+					testData.SplitTestSet(1);
+					Data.TestRecords = testData.TestRecords;
+					Data.TestTargets = testData.TestTargets;
+					Data.IsValid = (Data.IsValid && testData.IsValid);
+				}
+				if (!Data.IsValid)
 					return;
 
-                txtConsole.AppendText("\n\nrecords:" + Data.Records.Count + ", test records:" + Data.TestRecords.Count);
-            }
+				txtConsole.AppendText("\n\nrecords:" + Data.Records.Count + ", test records:" + Data.TestRecords.Count);
+			}
 
 			txtConsole.AppendText("\n\n\n\nCreating new " + LearnerType);
 			//Once implemented, instantiate learners here.
@@ -198,19 +206,32 @@ namespace MachineLearning
 			{
 				Learner = new DecisionTree(Data);
 			}
-            else if (LearnerType == "Instance Based")
-            {
-                int k;
-                if (int.TryParse(txtNumHidden.Text, out k))
-                {
-                    if (k > 0)
-                        Learner = new KNN(Data, k);
-                    else
-                        Learner = new KNN(Data, 0);
-                }
-                else
-                    Learner = new KNN(Data, 0);
-            }
+			else if (LearnerType == "Instance Based")
+			{
+				int k;
+				if (int.TryParse(txtNumHidden.Text, out k))
+				{
+					if (k > 0)
+						Learner = new KNN(Data, k);
+					else
+						Learner = new KNN(Data, 0);
+				}
+				else
+					Learner = new KNN(Data, 0);
+			}
+			else if (LearnerType == "Clustering")
+			{
+				int k;
+				if (int.TryParse(txtNumHidden.Text, out k))
+				{
+					if (k > 0)
+						Learner = new Clustering(Data, k);
+					else
+						Learner = new Clustering(Data, 0);
+				}
+				else
+					Learner = new Clustering(Data, 0);
+			}
 			else
 				return;
 
@@ -227,10 +248,10 @@ namespace MachineLearning
 
 		private void SetLearnerValues()
 		{
-            Learner.LearnerOutputs = "";
+			Learner.LearnerOutputs = "";
 
-            //Generic settings for all learner types
-            double LearningRate = 0.1; //Default value. Will be overwritten by user input
+			//Generic settings for all learner types
+			double LearningRate = 0.1; //Default value. Will be overwritten by user input
 			double.TryParse(txtLearningRate.Text, out LearningRate);
 
 			double ValidationPercent = 0.15; //Default value. Will be overwritten by user input
@@ -281,9 +302,9 @@ namespace MachineLearning
 			if (LearnerType == "Decision Tree")
 			{
 				var dLearner = (DecisionTree)Learner;
-                //Accuracy = dLearner.runNFold(10);
-                Accuracy = Learner.MeasureAccuracy("Test") * 100;
-            }
+				//Accuracy = dLearner.runNFold(10);
+				Accuracy = Learner.MeasureAccuracy("Test") * 100;
+			}
 			else {
 				Accuracy = Learner.MeasureAccuracy("Test") * 100;
 			}
@@ -292,5 +313,5 @@ namespace MachineLearning
 			txtConsole.AppendText(Learner.LearnerOutputs);
 			txtConsole.ScrollToCaret();
 		}
-    }
+	}
 }

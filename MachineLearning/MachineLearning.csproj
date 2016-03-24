@@ -49,6 +49,7 @@
   <ItemGroup>
     <Compile Include="DataSet.cs" />
     <Compile Include="DecisionTree.cs" />
+    <Compile Include="Clustering.cs" />
     <Compile Include="KNN.cs" />
     <Compile Include="LearningMachine.cs" />
     <Compile Include="MachineLearning.cs">

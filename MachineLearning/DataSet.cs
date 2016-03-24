@@ -28,8 +28,9 @@ namespace MachineLearning
 		public List<List<double>> TestRecords { get; set; }
 		public List<double> TestTargets { get; set; }
 
-        public List<int> NominalFeatures { get; }
-        public bool OutputNominal { get; }
+		public List<int> NominalFeatures { get; set; }
+		public bool OutputNominal { get; set; }
+		public bool hasClass = false;
 
 		//Number of possible output classifications (Given nominal target outputs)
 		public int? NumClassifications
@@ -57,7 +58,7 @@ namespace MachineLearning
 		/// <param name="FileLocation"></param>
 		public DataSet(string FileLocation)
 		{
-            IsValid = true;
+			IsValid = true;
 
 			Records = new List<List<double>>();
 			TargetOutputs = new List<double>();
@@ -68,10 +69,10 @@ namespace MachineLearning
 			ValidationRecords = new List<List<double>>();
 			ValidationTargets = new List<double>();
 
-            NominalFeatures = new List<int>();
-            OutputNominal = false;
+			NominalFeatures = new List<int>();
+			OutputNominal = false;
 
-            try {
+			try {
 				List<string> data = System.IO.File.ReadAllLines(FileLocation).ToList();
 				//Remove everything before the first attribute
 				for (int i = 0; i < data.Count; i++)
@@ -82,7 +83,7 @@ namespace MachineLearning
 						break;
 					}
 				}
-                
+				
 				//Process attributes, then remove them when @data is found
 				for (int i = 0; i < data.Count; i++)
 				{
@@ -97,14 +98,15 @@ namespace MachineLearning
 
 					if (line.ToLower().Contains("class"))
 					{
-                        OutputNominal = true;
-                        //Get to the first nominal value
-                        string attribute = line.Substring(line.IndexOf('{') + 1);
+						hasClass = true;
+						OutputNominal = true;
+						//Get to the first nominal value
+						string attribute = line.Substring(line.IndexOf('{') + 1);
 						//Remove any spaces and the trailing bracket
 						attribute = attribute.Replace(" ", "");
 						attribute = attribute.Replace("}", "");
 						//Split the values on commas
-						List<string> values = attribute.Split(',').ToList();
+						List<string> values = attribute.Split(',','\t').ToList();
 						foreach (string s in values)
 						{
 							NominalOutputMap.Add(s, NominalOutputMap.Count + 1.0);
@@ -112,14 +114,14 @@ namespace MachineLearning
 					}
 					else
 					{
-                        NominalFeatures.Add(i);
-                        //Get to the first nominal value
-                        string attribute = line.Substring(line.IndexOf('{') + 1);
+						NominalFeatures.Add(i);
+						//Get to the first nominal value
+						string attribute = line.Substring(line.IndexOf('{') + 1);
 						//Remove any spaces and the trailing bracket
 						attribute = attribute.Replace(" ", "");
 						attribute = attribute.Replace("}", "");
 						//Split the values on commas
-						List<string> values = attribute.Split(',').ToList();
+						List<string> values = attribute.Split(',','\t').ToList();
 						foreach (string s in values)
 						{
 							if (!NominalValueMap.ContainsKey(s)) //Nominal inputs mapped to fractions of 10 (.1, .2, .3, etc...)
@@ -132,7 +134,7 @@ namespace MachineLearning
 				{
 					if (line.Trim(' ', '\t') == "" || line[0] == ('%'))
 						continue;
-					List<string> record = line.Split(',').ToList();
+					List<string> record = line.Split(',','\t').ToList();
 					Records.Add(parseFeatures(record));
 					TargetOutputs.Add(parseTargetOutput(record));
 				}
@@ -160,9 +162,9 @@ namespace MachineLearning
 			NominalValueMap = new Dictionary<string, double>(Data.NominalValueMap);
 			NominalOutputMap = new Dictionary<string, double>(Data.NominalOutputMap);
 
-            NominalFeatures = new List<int>(Data.NominalFeatures);
-            OutputNominal = Data.OutputNominal;
-        }
+			NominalFeatures = new List<int>(Data.NominalFeatures);
+			OutputNominal = Data.OutputNominal;
+		}
 		#endregion
 
 		#region Manipulate Training/Test/Validation sets
@@ -259,7 +261,8 @@ namespace MachineLearning
 		{
 			List<string> record = new List<string>(rec);
 			List<double> result = new List<double>();
-			record.RemoveAt(record.Count - 1);
+			if (hasClass)
+				record.RemoveAt(record.Count - 1);
 			foreach (string val in record)
 			{
 				//Trim off any leading or trailing quotation marks
