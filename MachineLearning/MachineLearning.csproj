@@ -74,12 +74,20 @@
       <DesignTime>True</DesignTime>
     </Compile>
     <None Include="datasets\cars.arff" />
+    <None Include="datasets\credit-a.arff" />
     <None Include="datasets\housing-test.arff" />
     <None Include="datasets\housing-train.arff" />
     <None Include="datasets\iris.arff" />
+    <None Include="datasets\laborWithID.arff" />
     <None Include="datasets\lenses.arff" />
     <None Include="datasets\mt_test.arff" />
     <None Include="datasets\mt_train.arff" />
+    <None Include="datasets\smash data\D-spring2008_no_playoff_stats.xls" />
+    <None Include="datasets\smash data\I-winter2013_no_playoff_stats.xls" />
+    <None Include="datasets\smash data\J-fall2013_no_playoff_stats-2.xls" />
+    <None Include="datasets\smash data\N-fall2015_no_playoffs.xls" />
+    <None Include="datasets\SmashStats.arff" />
+    <None Include="datasets\sponge.arff" />
     <None Include="datasets\vote.arff" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>

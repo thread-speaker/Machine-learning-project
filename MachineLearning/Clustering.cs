@@ -43,18 +43,21 @@ namespace MachineLearning
 		{
 			LearnerOutputs = "\n";
 			TotalEpochs = 0;
-			double bssf = double.MaxValue; //best solution so far
-			double sse = bssf; //Sum squared error
-			do
-			{
-				LearnerOutputs += "\n";
+			double sse = 0; //Sum squared error
+            bool moved = false;
+
+            do
+            {
+                Console.WriteLine("---------------------------------------------------");
+                Console.WriteLine(TotalEpochs + 1);
+                Console.WriteLine("---------------------------------------------------");
+                LearnerOutputs += "\n";
 
 				int indx = 0;
 				foreach (Centroid centroid in centroids)
 				{
 					LearnerOutputs += "Centroid " + (++indx) + ": " + centroid.ToString() + "\n";
 				}
-				bssf = sse;
 
 				//assign all points to a median
 				foreach (List<double> record in Data.Records)
@@ -80,36 +83,37 @@ namespace MachineLearning
 					sse += centroid.getSquaredError();
 				}
 
-				//did improvment happen?
-				if (sse < bssf)
-				{
-					//move all centroids to the new centroid location
-					foreach (Centroid centroid in centroids)
-					{
-						centroid.nudge();
-					}
+                //move all centroids to the new centroid location
+                //if none of them moved, then the system settled, and is done training
+                moved = false;
+				foreach (Centroid centroid in centroids)
+                {
+                    Console.WriteLine(centroid);
+                    centroid.nudge();
+                    if (centroid.hasChanged())
+                        moved = true;
 				}
-				else
-				{
-					
-				}
-				TotalEpochs++;
 
+				TotalEpochs++;
 				LearnerOutputs += "SSE: " + sse;
-			} while (sse < bssf);
+                Console.WriteLine(sse);
+                Console.WriteLine();
+            } while (moved);
 		}
 
 		public class Centroid
 		{
+            public List<double> prevCoords { get; set; }
 			public List<double> coords { get; set; }
 			public List<List<double>> ownedRecords { get; set; }
 			private DataSet Data;
 
 			public Centroid(List<double> coords, DataSet Data)
 			{
-				this.coords = coords;
+                this.prevCoords = coords;
+                this.coords = coords;
 				this.Data = Data;
-				ownedRecords = new List<List<double>>();
+				this.ownedRecords = new List<List<double>>();
 			}
 
 			public void clearRecords()
@@ -208,12 +212,25 @@ namespace MachineLearning
 				return distSquared;
 			}
 
-			public string ToString()
+            public bool hasChanged()
+            {
+                bool result = false;
+                for (int column = 0; column < coords.Count; column++)
+                {
+                    if (prevCoords[column] != coords[column])
+                    {
+                        result = true;
+                        break;
+                    }
+                }
+                return result;
+            }
+
+			public override string ToString()
 			{
 				string result = "";
 				foreach (double value in coords)
 				{
-					Console.WriteLine(value);
 					if (value != double.MaxValue)
 					{
 						result += value + ", ";
