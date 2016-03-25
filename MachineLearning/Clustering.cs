@@ -44,22 +44,26 @@ namespace MachineLearning
 			LearnerOutputs = "\n";
 			TotalEpochs = 0;
 			double sse = 0; //Sum squared error
-            bool moved = false;
+			bool moved = false;
 
-            do
-            {
-                Console.WriteLine("---------------------------------------------------");
-                Console.WriteLine(TotalEpochs + 1);
-                Console.WriteLine("---------------------------------------------------");
-                LearnerOutputs += "\n";
+			do
+			{
+				Console.WriteLine("---------------------------------------------------");
+				Console.WriteLine("Iteration " + (TotalEpochs + 1));
+				Console.WriteLine("---------------------------------------------------");
+				LearnerOutputs += "\n";
 
+				Console.WriteLine("Computing Centroids:");
 				int indx = 0;
 				foreach (Centroid centroid in centroids)
 				{
+					Console.WriteLine(centroid);
 					LearnerOutputs += "Centroid " + (++indx) + ": " + centroid.ToString() + "\n";
 				}
 
 				//assign all points to a median
+				Console.WriteLine("Making assignments");
+				int recordindx = 0;
 				foreach (List<double> record in Data.Records)
 				{
 					int cisf = -1; //closest index so far
@@ -74,8 +78,12 @@ namespace MachineLearning
 						}
 					}
 					//give the closest record "ownership" of the record
+					Console.Write(recordindx + ":" + cisf + ", ");
+					recordindx++;
 					centroids[cisf].addRecord(record);
 				}
+				Console.WriteLine();
+
 				//calculate mean squared error
 				sse = 0.0;
 				foreach (Centroid centroid in centroids)
@@ -83,35 +91,34 @@ namespace MachineLearning
 					sse += centroid.getSquaredError();
 				}
 
-                //move all centroids to the new centroid location
-                //if none of them moved, then the system settled, and is done training
-                moved = false;
+				//move all centroids to the new centroid location
+				//if none of them moved, then the system settled, and is done training
+				moved = false;
 				foreach (Centroid centroid in centroids)
-                {
-                    Console.WriteLine(centroid);
-                    centroid.nudge();
-                    if (centroid.hasChanged())
-                        moved = true;
+				{
+					centroid.nudge();
+					if (centroid.hasChanged())
+						moved = true;
 				}
 
 				TotalEpochs++;
 				LearnerOutputs += "SSE: " + sse;
-                Console.WriteLine(sse);
-                Console.WriteLine();
-            } while (moved);
+				Console.WriteLine("SSE: " + sse);
+				Console.WriteLine();
+			} while (moved);
 		}
 
 		public class Centroid
 		{
-            public List<double> prevCoords { get; set; }
+			public List<double> prevCoords { get; set; }
 			public List<double> coords { get; set; }
 			public List<List<double>> ownedRecords { get; set; }
 			private DataSet Data;
 
 			public Centroid(List<double> coords, DataSet Data)
 			{
-                this.prevCoords = coords;
-                this.coords = coords;
+				this.prevCoords = coords;
+				this.coords = coords;
 				this.Data = Data;
 				this.ownedRecords = new List<List<double>>();
 			}
@@ -192,10 +199,12 @@ namespace MachineLearning
 
 				for (int column = 0; column < features.Count; column++)
 				{
+					//If either is unknown
 					if (features[column] == double.MaxValue || coords[column] == double.MaxValue)
 					{
 						distSquared += 1;
 					}
+					//else if nominal
 					else if (Data.NominalFeatures.Contains(column))
 					{
 						if (features[column] == coords[column])
@@ -203,6 +212,7 @@ namespace MachineLearning
 						else
 							distSquared += 1;
 					}
+					//else continuous
 					else
 					{
 						distSquared += Math.Pow(features[column] - coords[column], 2);
@@ -212,19 +222,19 @@ namespace MachineLearning
 				return distSquared;
 			}
 
-            public bool hasChanged()
-            {
-                bool result = false;
-                for (int column = 0; column < coords.Count; column++)
-                {
-                    if (prevCoords[column] != coords[column])
-                    {
-                        result = true;
-                        break;
-                    }
-                }
-                return result;
-            }
+			public bool hasChanged()
+			{
+				bool result = false;
+				for (int column = 0; column < coords.Count; column++)
+				{
+					if (prevCoords[column] != coords[column])
+					{
+						result = true;
+						break;
+					}
+				}
+				return result;
+			}
 
 			public override string ToString()
 			{
