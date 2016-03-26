@@ -46,8 +46,8 @@ namespace MachineLearning
 
 		//On creation of data, map nominal features/outputs to double values. 
 		//Outputs will be converted to "integers" (1.0, 2.0, etc...)
-		private Dictionary<string, double> NominalValueMap = new Dictionary<string, double>();
-		private Dictionary<string, double> NominalOutputMap = new Dictionary<string, double>();
+		public Dictionary<string, double> NominalValueMap = new Dictionary<string, double>();
+		public Dictionary<string, double> NominalOutputMap = new Dictionary<string, double>();
 		#endregion
 
 		#region Constructor

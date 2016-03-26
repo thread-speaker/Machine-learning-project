@@ -43,27 +43,26 @@ namespace MachineLearning
 		{
 			LearnerOutputs = "\n";
 			TotalEpochs = 0;
-			double sse = 0; //Sum squared error
+			double sse = 0, sseAfter = 0; //Sum squared error
 			bool moved = false;
 
 			do
-			{
-				Console.WriteLine("---------------------------------------------------");
-				Console.WriteLine("Iteration " + (TotalEpochs + 1));
-				Console.WriteLine("---------------------------------------------------");
-				LearnerOutputs += "\n";
+            {
+                LearnerOutputs += "\n";
+                LearnerOutputs += "-----------------------------------\n";
+                LearnerOutputs += "Iteration " + (++TotalEpochs) + "\n";
+                LearnerOutputs += "-----------------------------------\n";
+                LearnerOutputs += "Computing Centroids:\n";
 
-				Console.WriteLine("Computing Centroids:");
-				int indx = 0;
+                int indx = 0;
 				foreach (Centroid centroid in centroids)
 				{
-					Console.WriteLine(centroid);
-					LearnerOutputs += "Centroid " + (++indx) + ": " + centroid.ToString() + "\n";
+					LearnerOutputs += "Centroid " + (indx++) + ": " + centroid.ToString() + "\n";
 				}
 
-				//assign all points to a median
-				Console.WriteLine("Making assignments");
-				int recordindx = 0;
+                //assign all points to a median
+                LearnerOutputs += "Making Assignments\n\t";
+                int recordindx = 0;
 				foreach (List<double> record in Data.Records)
 				{
 					int cisf = -1; //closest index so far
@@ -78,35 +77,34 @@ namespace MachineLearning
 						}
 					}
 					//give the closest record "ownership" of the record
-					Console.Write(recordindx + ":" + cisf + ", ");
-					recordindx++;
 					centroids[cisf].addRecord(record);
-				}
-				Console.WriteLine();
+                    LearnerOutputs += recordindx + ":" + cisf + ", ";
+                    if (recordindx % 10 == 9)
+                        LearnerOutputs += "\n\t";
+                    recordindx++;
+                }
+                LearnerOutputs += "\n";
 
-				//calculate mean squared error
-				sse = 0.0;
+                //calculate mean squared error
+                //move all centroids to the new centroid location
+                //if none of them moved, then the system settled, and is done training
+                sse = 0.0;
+                sseAfter = 0.0;
+                moved = false;
 				foreach (Centroid centroid in centroids)
 				{
-					sse += centroid.getSquaredError();
-				}
-
-				//move all centroids to the new centroid location
-				//if none of them moved, then the system settled, and is done training
-				moved = false;
-				foreach (Centroid centroid in centroids)
-				{
-					centroid.nudge();
-					if (centroid.hasChanged())
+                    sse += centroid.getSquaredError();
+                    centroid.nudge();
+                    sseAfter += centroid.getSquaredError();
+                    if (centroid.hasChanged() && sse != sseAfter)
 						moved = true;
+                    centroid.clearRecords();
 				}
-
-				TotalEpochs++;
-				LearnerOutputs += "SSE: " + sse;
-				Console.WriteLine("SSE: " + sse);
-				Console.WriteLine();
+                
+				LearnerOutputs += "SSE: " + sse + "\n";
 			} while (moved);
-		}
+            LearnerOutputs += "Centroids have converged\n";
+        }
 
 		public class Centroid
 		{
@@ -121,6 +119,14 @@ namespace MachineLearning
 				this.coords = coords;
 				this.Data = Data;
 				this.ownedRecords = new List<List<double>>();
+
+                for (int column = 0; column < coords.Count; column++)
+                {
+                    if (!Data.NominalFeatures.Contains(column))
+                    {
+                        coords[column] = Math.Round(coords[column], 3);
+                    }
+                }
 			}
 
 			public void clearRecords()
@@ -143,8 +149,9 @@ namespace MachineLearning
 				return result;
 			}
 
-			public void nudge()
+            public void nudge()
 			{
+                prevCoords = new List<double>(coords);
 				List<double> meanCoords = new List<double>();
 
 				//Calculate mean location
@@ -159,7 +166,7 @@ namespace MachineLearning
 						foreach (List<double> row in ownedRecords)
 						{
 							if (row[column] != double.MaxValue)
-								values.Add(row[column]);
+								values.Add(Math.Round(row[column],1));
 						}
 
 						if (values.Count > 0)
@@ -182,10 +189,12 @@ namespace MachineLearning
 							}
 						}
 
-						if (knownValues == 0) //If all values were unknown, set it to unknown
-							meanCoords[column] = double.MaxValue;
-						else //Otherwise, divide by the count for the average (mean)
-							meanCoords[column] /= knownValues;
+                        if (knownValues == 0) //If all values were unknown, set it to unknown
+                            meanCoords[column] = double.MaxValue;
+                        else { //Otherwise, divide by the count for the average (mean)
+                            meanCoords[column] /= knownValues;
+                            meanCoords[column] = Math.Round(meanCoords[column], 3);
+                        }
 					}
 				}
 
@@ -207,7 +216,7 @@ namespace MachineLearning
 					//else if nominal
 					else if (Data.NominalFeatures.Contains(column))
 					{
-						if (features[column] == coords[column])
+                        if (Math.Round(features[column], 1) == Math.Round(coords[column], 1))
 							distSquared += 0;
 						else
 							distSquared += 1;
@@ -215,7 +224,7 @@ namespace MachineLearning
 					//else continuous
 					else
 					{
-						distSquared += Math.Pow(features[column] - coords[column], 2);
+                        distSquared += Math.Pow(Math.Round(features[column], 3) - Math.Round(coords[column], 3), 2);
 					}
 				}
 
@@ -239,11 +248,31 @@ namespace MachineLearning
 			public override string ToString()
 			{
 				string result = "";
-				foreach (double value in coords)
+				for (int i = 0; i < coords.Count; i++)
 				{
-					if (value != double.MaxValue)
+                    double value = coords[i];
+
+                    if (value != double.MaxValue)
 					{
-						result += value + ", ";
+                        if (Data.NominalFeatures.Contains(i))
+                        {
+                            bool found = false;
+                            foreach (KeyValuePair<string,double> kv in Data.NominalValueMap)
+                            {
+                                if (Math.Round(kv.Value, 1) == Math.Round(value, 1))
+                                {
+                                    found = true;
+                                    result += kv.Key + ", ";
+                                    break;
+                                }
+                            }
+                            if (!found)
+                            {
+                                result += "COULDN'T PLACE " + value + ", ";
+                            }
+                        }
+                        else
+						    result += value + ", ";
 					}
 					else result += "?, ";
 				}
