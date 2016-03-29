@@ -13,6 +13,8 @@ namespace MachineLearning
 		private DataSet Data;
 		private int k;
 		private List<Centroid> centroids;
+		private bool rondomize = true;
+		private bool normalize = true;
 
 		public Clustering(DataSet Data, int k)
 		{
@@ -25,8 +27,43 @@ namespace MachineLearning
 			if (k == 0)
 				k = 4;
 
-			centroids = new List<Centroid>();
+			if (rondomize)
+			{
+				Data.Shuffle();
+			}
 
+			if (normalize)
+			{
+				for (int column = 0; column < Data.Records[0].Count; column++)
+				{
+					if (Data.NominalFeatures.Contains(column))
+					{
+						double max = double.MinValue, min = double.MaxValue;
+						foreach (List<double> record in Data.Records)
+						{
+							if (record[column] < min)
+								min = record[column];
+							if (record[column] > max)
+								max = record[column];
+						}
+						//min and max are set, normalize the column of data
+						foreach (List<double> record in Data.Records)
+						{
+							//data range: [min, max]
+							record[column] -= min;
+							//data range: [0, (max-min)]
+							record[column] /= (max - min);
+							//data range: [0, 1]
+							record[column] *= 2;
+							//data range: [0, 2]
+							record[column] -= 1;
+							//data range: [-1, 1] <- this is what we want in normalized data
+						}
+					}
+				}
+			}
+
+			centroids = new List<Centroid>();
 			for (int i = 0; i < k; i++)
 			{
 				centroids.Add(new Centroid(Data.Records[i], Data));
@@ -45,27 +82,28 @@ namespace MachineLearning
 
 		public override void Train()
 		{
-			LearnerOutputs = "\n";
+			//LearnerOutputs = "\n";
 			TotalEpochs = 0;
 			double sse = 0, sseAfter = 0; //Sum squared error
 			bool moved = false;
 
 			do
 			{
-				LearnerOutputs += "\n";
-				LearnerOutputs += "-----------------------------------\n";
-				LearnerOutputs += "Iteration " + (++TotalEpochs) + "\n";
-				LearnerOutputs += "-----------------------------------\n";
-				LearnerOutputs += "Computing Centroids:\n";
+				//LearnerOutputs += "\n";
+				//LearnerOutputs += "-----------------------------------\n";
+				//LearnerOutputs += "Iteration " + (++TotalEpochs) + "\n";
+				//LearnerOutputs += "-----------------------------------\n";
+				//LearnerOutputs += "Computing Centroids:\n";
 
 				int indx = 0;
 				foreach (Centroid centroid in centroids)
 				{
-					LearnerOutputs += "Centroid " + (indx++) + ": " + centroid.ToString() + "\n";
+					//LearnerOutputs += "Centroid " + (indx++) + ": " + centroid.ToString() + "\n";
+					centroid.clearRecords();
 				}
 
 				//assign all points to a median
-				LearnerOutputs += "Making Assignments\n\t";
+				//LearnerOutputs += "Making Assignments\n\t";
 				int recordindx = 0;
 				foreach (List<double> record in Data.Records)
 				{
@@ -82,12 +120,12 @@ namespace MachineLearning
 					}
 					//give the closest record "ownership" of the record
 					centroids[cisf].addRecord(record);
-					LearnerOutputs += recordindx + ":" + cisf + ", ";
+					//LearnerOutputs += recordindx + ":" + cisf + ", ";
 					if (recordindx % 10 == 9)
-						LearnerOutputs += "\n\t";
+						//LearnerOutputs += "\n\t";
 					recordindx++;
 				}
-				LearnerOutputs += "\n";
+				//LearnerOutputs += "\n";
 
 				//calculate mean squared error
 				//move all centroids to the new centroid location
@@ -101,13 +139,22 @@ namespace MachineLearning
 					centroid.nudge();
 					sseAfter += centroid.getSquaredError();
 					if (centroid.hasChanged() && sse != sseAfter)
+					{
 						moved = true;
-					centroid.clearRecords();
+					}
 				}
 				
-				LearnerOutputs += "SSE: " + sse + "\n";
+				//LearnerOutputs += "SSE: " + sse + "\n";
 			} while (moved);
-			LearnerOutputs += "Centroids have converged\n";
+			//LearnerOutputs += "Centroids have converged\n\n";
+			//LearnerOutputs += "# of clusters: " + centroids.Count + "\n";
+			for (int i = 0; i < centroids.Count; i++)
+			{
+				LearnerOutputs += "Centroid " + i + ": " + centroids[i].ToString();
+				LearnerOutputs += "\n\t" + centroids[i].ownedRecords.Count + " records in this cluster";
+				LearnerOutputs += "\n\tSSE: " + centroids[i].getSquaredError();
+				LearnerOutputs += "\n\tSilhouette:\n\t" + centroids[i].silhouette(centroids, i) +"\n\n";
+			}
 		}
 
 		public class Centroid
@@ -281,6 +328,59 @@ namespace MachineLearning
 					else result += "?, ";
 				}
 				return result;
+			}
+
+			internal string silhouette(List<Centroid> centroids, int excludeIndx)
+			{
+				if (ownedRecords.Count == 0)
+					return "0";
+
+				List<double> values = new List<double>();
+				for (int row = 0; row < ownedRecords.Count; row++)
+				{
+					//Calculate a(i)
+					double a = averageDissimilarity(ownedRecords[row]);
+
+					//Calculate b(i)
+					double b = double.MaxValue;
+					for (int c = 0; c < centroids.Count; c++)
+					{
+						if (c == excludeIndx)
+							continue;
+						double dist = centroids[c].averageDissimilarity(ownedRecords[row]);
+						if (dist < b)
+							b = dist;
+					}
+
+					//Calculate s(i)
+					double s = (b - a) / Math.Max(b, a);
+
+					//Add s(i) to values
+					values.Add(s);
+				}
+
+				values.Sort();
+				string result = values[0].ToString();
+				for (int i = 1; i < values.Count; i++)
+				{
+					result = String.Format("{0},{1}", result, values[i].ToString());
+				}
+				return result;
+			}
+
+			public double averageDissimilarity(List<double> record)
+			{
+				double average = 0;
+
+				double recordDist = Math.Sqrt(distSquaredTo(record));
+				foreach (List<double> row in ownedRecords)
+				{
+					double rowDist = Math.Sqrt(distSquaredTo(row));
+					average += Math.Abs(recordDist - rowDist);
+				}
+				average /= ownedRecords.Count;
+
+				return average;
 			}
 		}
 	}

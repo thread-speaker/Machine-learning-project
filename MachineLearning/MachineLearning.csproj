@@ -73,10 +73,12 @@
       <DependentUpon>Resources.resx</DependentUpon>
       <DesignTime>True</DesignTime>
     </Compile>
+    <None Include="datasets\abalone500.arff" />
     <None Include="datasets\cars.arff" />
     <None Include="datasets\credit-a.arff" />
     <None Include="datasets\housing-test.arff" />
     <None Include="datasets\housing-train.arff" />
+    <None Include="datasets\iris-class-attribute.arff" />
     <None Include="datasets\iris.arff" />
     <None Include="datasets\laborWithID.arff" />
     <None Include="datasets\lenses.arff" />
