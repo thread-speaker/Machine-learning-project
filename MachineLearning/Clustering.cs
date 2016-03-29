@@ -6,10 +6,6 @@ namespace MachineLearning
 {
 	internal class Clustering : LearningMachine
 	{
-		//a(i) is the average dissimmilarity in the cluster
-		//b(i) is the minimum average dissimilarity in other clusters (neighboring cluster)
-		//s(i) = b(i) - a(i) / MAX{a(i),b(i)}
-
 		private DataSet Data;
 		private int k;
 		private List<Centroid> centroids;
@@ -154,6 +150,7 @@ namespace MachineLearning
 				LearnerOutputs += "\n\t" + centroids[i].ownedRecords.Count + " records in this cluster";
 				LearnerOutputs += "\n\tSSE: " + centroids[i].getSquaredError();
 				LearnerOutputs += "\n\tSilhouette:\n\t" + centroids[i].silhouette(centroids, i) +"\n\n";
+				LearnerOutputs += "\nSSE: " + sse + "\n";
 			}
 		}
 
@@ -360,6 +357,7 @@ namespace MachineLearning
 				}
 
 				values.Sort();
+				values.Reverse();
 				string result = values[0].ToString();
 				for (int i = 1; i < values.Count; i++)
 				{
