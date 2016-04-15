@@ -64,6 +64,29 @@ namespace MachineLearning
 					if (Data.IsValid)
 					{
 						txtConsole.AppendText("\n\nDataset successfully validated.");
+						//See if its smash data
+						if (Data.Records.Count > 0)
+						{
+							bool isSmash = true;
+							foreach (double d in Data.Records[0])
+							{
+								if (d != double.MaxValue)
+								{
+									isSmash = false;
+									break;
+								}
+							}
+							if (isSmash)
+							{
+								txtConsole.AppendText("\n\nSMASH!");
+								Data.Records.RemoveAt(0);
+								Data.names.RemoveAt(0);
+								foreach (List<double> record in Data.Records)
+								{
+									record.RemoveAt(0);
+								}
+							}
+						}
 						txtConsole.ScrollToCaret();
 					}
 					else

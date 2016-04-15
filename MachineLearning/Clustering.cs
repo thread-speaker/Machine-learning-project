@@ -149,8 +149,16 @@ namespace MachineLearning
 				LearnerOutputs += "Centroid " + i + ": " + centroids[i].ToString();
 				LearnerOutputs += "\n\t" + centroids[i].ownedRecords.Count + " records in this cluster";
 				LearnerOutputs += "\n\tSSE: " + centroids[i].getSquaredError();
-				LearnerOutputs += "\n\tSilhouette:\n\t" + centroids[i].silhouette(centroids, i) +"\n\n";
-				LearnerOutputs += "\nSSE: " + sse + "\n";
+				LearnerOutputs += "\n\tSilhouette:\n\t" + centroids[i].silhouette(centroids, i);
+				LearnerOutputs += "\n\tPlayers:";
+				for (int j = 0; j < Data.Records.Count; j++) {
+					List<double> record = Data.Records[j];
+					if (centroids[i].ownedRecords.Contains(record))
+					{
+						LearnerOutputs += "\n\t\t" + Data.names[j];
+					}
+				}
+				LearnerOutputs += "\n\nSSE: " + sse + "\n";
 			}
 		}
 

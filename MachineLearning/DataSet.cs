@@ -16,6 +16,8 @@ namespace MachineLearning
 		//IsValid Data File
 		public bool IsValid { get; set; }
 
+		public List<string> names { get; set; }
+
 		//Training set
 		public List<List<double>> Records { get; set; }
 		public List<double> TargetOutputs { get; set; }
@@ -59,6 +61,8 @@ namespace MachineLearning
 		public DataSet(string FileLocation)
 		{
 			IsValid = true;
+
+			names = new List<string>();
 
 			Records = new List<List<double>>();
 			TargetOutputs = new List<double>();
@@ -259,6 +263,8 @@ namespace MachineLearning
 		//Private methods used for parsing each data record into the respective arrays. Called during constructor
 		private List<double> parseFeatures(List<string> rec)
 		{
+			names.Add(rec[0]);
+
 			List<string> record = new List<string>(rec);
 			List<double> result = new List<double>();
 			if (hasClass)
